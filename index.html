@@ -153,6 +153,11 @@ canvas#confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; 
       <p class="who" id="rWho"></p>
       <p id="rExtras" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"></p>
       <p class="lede">Shh! Keep it a secret.</p>
+      <button class="primary" id="closeBtn" type="button">Close this window</button>
+    </div>
+    <div id="rDone" hidden style="display:grid;gap:10px;justify-items:center">
+      <p class="who" style="font-size:clamp(2rem,9vw,3rem)">All done!</p>
+      <p class="lede">Your browser won't let this page close itself. Close this tab or swipe it away. The name is hidden now, so it's safe to hand back.</p>
     </div>
   </div>
 </div>
@@ -355,6 +360,16 @@ function confetti() {
     if (++t < 200) requestAnimationFrame(tick); else c.hidden = true;
   })();
 }
+
+$("closeBtn").onclick = () => {
+  // Hide the name first so it isn't left on screen if the browser refuses to close the tab.
+  $("rResult").hidden = true;
+  $("gift").hidden = true;
+  $("rTitle").hidden = true;
+  $("rDone").hidden = false;
+  try { history.replaceState(null, "", location.pathname); } catch {}
+  try { window.close(); } catch {}
+};
 
 /* ---------- boot ---------- */
 function route() {
