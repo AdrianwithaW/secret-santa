@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Family Secret Santa</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+*{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}
+/* Layout: one narrow column; organiser view is a form + list of messages, reveal view is a single gift box centred on screen. */
+:root {
+  --bg: #f3f6f2;
+  --surface: #ffffff;
+  --fg: #16261d;
+  --muted: #5b6d62;
+  --line: #d6e0d8;
+  --accent: #b8253a;
+  --accent-fg: #ffffff;
+  --pine: #1f5a3d;
+  --gold: #d9a531;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "DM Sans", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1c15; --surface: #172a20; --fg: #e9f1ea; --muted: #9db3a4; --line: #2a4335;
+  --accent: #e0465c; --accent-fg: #ffffff; --pine: #5fbf8c; --gold: #e8bb52; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1c15; --surface: #172a20; --fg: #e9f1ea; --muted: #9db3a4; --line: #2a4335;
+  --accent: #e0465c; --accent-fg: #ffffff; --pine: #5fbf8c; --gold: #e8bb52; color-scheme: dark }
+
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 32px 64px; display: grid; gap: 28px; }
+h1, h2 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 7vw, 2.8rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 1.25rem; font-weight: 600; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 60ch; }
+.eyebrow { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--pine); font-weight: 700; }
+section { display: grid; gap: 14px; }
+
+.people { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 8px 10px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.row .sub { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: .9rem; color: var(--muted); }
+.row.kid { border-left: 4px solid var(--gold); }
+input[type=text], input[type=url], select, textarea {
+  font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; width: 100%; box-sizing: border-box; }
+select { width: auto; }
+textarea { resize: vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.toggle { display: inline-flex; gap: 6px; align-items: center; font-size: .9rem; color: var(--muted); white-space: nowrap; cursor: pointer; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+label.field { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .grid2 { grid-template-columns: 1fr; } }
+
+button, .btn { font: 600 1rem var(--body); border: 0; border-radius: 999px; padding: 11px 20px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.primary { background: var(--accent); color: var(--accent-fg); }
+.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+.small { padding: 7px 14px; font-size: .9rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.error { color: var(--accent); font-weight: 500; }
+
+.msg { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+.msg pre { margin: 0; white-space: pre-wrap; word-break: break-all; font: .85rem/1.45 ui-monospace, Menlo, monospace; color: var(--muted); background: var(--bg); padding: 10px; border-radius: 8px; max-height: 180px; overflow: auto; }
+.note { font-size: .9rem; color: var(--muted); border-left: 3px solid var(--gold); padding-left: 12px; }
+
+/* Reveal view */
+.reveal { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; text-align: center; padding-block: 24px; box-sizing: border-box; }
+.reveal .inner { display: grid; gap: 22px; justify-items: center; max-width: 440px; }
+.gift { width: min(220px, 60vw); aspect-ratio: 1; position: relative; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 16px; }
+.gift .box { position: absolute; inset: 28% 6% 0; background: var(--accent); border-radius: 10px; }
+.gift .lid { position: absolute; left: 0; right: 0; top: 16%; height: 18%; background: var(--accent); border-radius: 10px; filter: brightness(1.12); transition: transform .5s cubic-bezier(.3,1.6,.5,1); }
+.gift .ribbon-v { position: absolute; left: 50%; width: 14%; transform: translateX(-50%); top: 16%; bottom: 0; background: var(--gold); }
+.gift .bow { position: absolute; left: 50%; top: 2%; width: 40%; height: 18%; transform: translateX(-50%); }
+.gift .bow::before, .gift .bow::after { content: ""; position: absolute; top: 0; width: 50%; height: 100%; border: 7px solid var(--gold); border-radius: 50% 50% 10% 50%; box-sizing: border-box; }
+.gift .bow::before { left: 0; transform: rotate(-20deg); }
+.gift .bow::after { right: 0; transform: rotate(20deg) scaleX(-1); }
+.gift:hover .lid { transform: translateY(-6px) rotate(-3deg); }
+.gift.open .lid, .gift.open .bow { transform: translate(-10%, -70%) rotate(-25deg); transition: transform .6s ease; }
+.gift.open .bow { transform: translate(-50%, -40%) scale(.6); opacity: 0; transition: transform .4s ease, opacity .4s ease; }
+.wiggle { animation: wiggle 2.4s ease-in-out infinite; }
+@keyframes wiggle { 0%, 80%, 100% { transform: rotate(0) } 85% { transform: rotate(-6deg) } 90% { transform: rotate(6deg) } 95% { transform: rotate(-3deg) } }
+.who { font-family: var(--display); font-weight: 800; font-size: clamp(2.6rem, 13vw, 4.5rem); color: var(--accent); line-height: 1; letter-spacing: -0.02em; animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+@keyframes pop { from { transform: scale(.3); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+.budget { display: inline-block; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 500; }
+canvas#confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { .wiggle, .who { animation: none; } .gift .lid, .gift .bow { transition: none; } }
+</style>
+</head>
+<body>
+
+<div id="organiser" class="wrap" hidden>
+  <header style="display:grid;gap:10px">
+    <p class="eyebrow">Christmas 2026</p>
+    <h1>Family Secret Santa</h1>
+    <p class="lede">Add everyone, tick who's a kid and pick which parent gets their link. Hit Draw and you'll get one message per parent to send on WhatsApp. You won't see who got who.</p>
+  </header>
+
+  <section>
+    <h2>Who's taking part</h2>
+    <div id="people" class="people"></div>
+    <div class="actions"><button class="ghost small" id="addBtn" type="button">+ Add person</button></div>
+    <label class="toggle"><input type="checkbox" id="noHousehold"> Don't let people draw someone from their own household</label>
+    <p class="note" id="householdNote" hidden>Type the same household name (e.g. "Smiths") for people who live together.</p>
+  </section>
+
+  <section>
+    <h2>Extras</h2>
+    <div class="grid2">
+      <label class="field">Budget (optional)<input type="text" id="budget" placeholder="e.g. £20"></label>
+      <label class="field">Swap date (optional)<input type="text" id="when" placeholder="e.g. Christmas Day"></label>
+    </div>
+    <label class="field">Link to this page<input type="url" id="pageUrl" placeholder="Paste this page's share link"></label>
+  </section>
+
+  <div class="actions">
+    <button class="primary" id="drawBtn" type="button">Draw names</button>
+  </div>
+  <p class="error" id="err" role="alert" hidden></p>
+
+  <section id="results" hidden>
+    <h2>Send these</h2>
+    <p class="lede">One message per parent. It has their own link plus a link for each of their kids. Ask everyone to only open their own link.</p>
+    <div id="msgs" class="people"></div>
+    <p class="note">Drawing again makes brand new links, so only send one set.</p>
+  </section>
+</div>
+
+<div id="reveal" class="reveal" hidden>
+  <div class="inner">
+    <p class="eyebrow" id="rEyebrow">Family Secret Santa</p>
+    <h1 id="rTitle"></h1>
+    <button class="gift wiggle" id="gift" type="button" aria-label="Open your present">
+      <span class="box"></span><span class="ribbon-v"></span><span class="lid"></span><span class="bow"></span>
+    </button>
+    <p class="lede" id="rHint">Tap the present to see who you're buying for.</p>
+    <div id="rResult" hidden style="display:grid;gap:14px;justify-items:center">
+      <p class="lede">You're buying a present for</p>
+      <p class="who" id="rWho"></p>
+      <p id="rExtras" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"></p>
+      <p class="lede">Shh! Keep it a secret.</p>
+    </div>
+  </div>
+</div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+const PAGE_URL = /^https?:/.test(location.protocol) ? location.origin + location.pathname : "";
+const KEY = "ho-ho-ho-merry";
+
+/* ---------- encoding (hash must be letters, digits, hyphens) ---------- */
+function encode(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let hex = "";
+  bytes.forEach((b, i) => { hex += (b ^ KEY.charCodeAt(i % KEY.length)).toString(16).padStart(2, "0"); });
+  return "gift-" + hex;
+}
+function decode(hash) {
+  const hex = hash.replace(/^#?gift-/, "");
+  if (!/^[0-9a-f]+$/.test(hex) || hex.length % 2) return null;
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16) ^ KEY.charCodeAt(i % KEY.length);
+  try { return JSON.parse(new TextDecoder().decode(bytes)); } catch { return null; }
+}
+
+/* ---------- organiser ---------- */
+const $ = id => document.getElementById(id);
+let people = [
+  { name: "", kid: false, parent: "", house: "" },
+  { name: "", kid: false, parent: "", house: "" },
+  { name: "", kid: false, parent: "", house: "" },
+  { name: "", kid: false, parent: "", house: "" },
+  { name: "", kid: true, parent: "", house: "" },
+  { name: "", kid: true, parent: "", house: "" },
+  { name: "", kid: true, parent: "", house: "" },
+  { name: "", kid: true, parent: "", house: "" },
+];
+try { const saved = JSON.parse(localStorage.getItem("ss-people") || "null"); if (Array.isArray(saved) && saved.length) people = saved; } catch {}
+function save() { try { localStorage.setItem("ss-people", JSON.stringify(people)); } catch {} }
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function render() {
+  const adults = people.filter(p => !p.kid && p.name.trim()).map(p => p.name.trim());
+  const showHouse = $("noHousehold").checked;
+  $("householdNote").hidden = !showHouse;
+  $("people").innerHTML = people.map((p, i) => `
+    <div class="row ${p.kid ? "kid" : ""}">
+      <input type="text" id="name-${i}" data-i="${i}" data-k="name" value="${esc(p.name)}" placeholder="${p.kid ? "Kid" : "Parent"} ${i + 1} name" aria-label="Name">
+      <button class="ghost small" type="button" data-remove="${i}" aria-label="Remove">✕</button>
+      <div class="sub">
+        <label class="toggle"><input type="checkbox" id="kid-${i}" data-i="${i}" data-k="kid" ${p.kid ? "checked" : ""}> Kid</label>
+        ${p.kid ? `<label class="toggle">Send link to
+          <select id="parent-${i}" data-i="${i}" data-k="parent">
+            <option value="">choose parent</option>
+            ${adults.map(a => `<option ${a === p.parent ? "selected" : ""}>${esc(a)}</option>`).join("")}
+          </select></label>` : ""}
+        ${showHouse ? `<label class="toggle">Household <input type="text" id="house-${i}" data-i="${i}" data-k="house" value="${esc(p.house)}" style="width:120px" placeholder="e.g. Smiths"></label>` : ""}
+      </div>
+    </div>`).join("");
+}
+
+$("people").addEventListener("input", e => {
+  const t = e.target, i = +t.dataset.i, k = t.dataset.k;
+  if (k == null) return;
+  people[i][k] = t.type === "checkbox" ? t.checked : t.value;
+  save();
+  if (k === "kid") render();
+});
+$("people").addEventListener("change", e => {
+  if (e.target.dataset.k === "name") render(); // refresh parent dropdowns
+});
+$("people").addEventListener("click", e => {
+  const r = e.target.closest("[data-remove]");
+  if (r) { people.splice(+r.dataset.remove, 1); save(); render(); }
+});
+$("addBtn").onclick = () => { people.push({ name: "", kid: false, parent: "", house: "" }); save(); render(); };
+$("noHousehold").onchange = render;
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function draw(list, noHouse) {
+  const ok = (g, r) => g !== r && !(noHouse && list[g].house.trim() && list[g].house.trim().toLowerCase() === list[r].house.trim().toLowerCase());
+  const idx = list.map((_, i) => i);
+  for (let tries = 0; tries < 5000; tries++) {
+    const perm = shuffle(idx.slice());
+    if (idx.every(g => ok(g, perm[g]))) return perm;
+  }
+  return null;
+}
+
+function showError(msg) { $("err").textContent = msg; $("err").hidden = !msg; }
+
+$("drawBtn").onclick = () => {
+  showError("");
+  const list = people.map(p => ({ ...p, name: p.name.trim() })).filter(p => p.name);
+  const names = list.map(p => p.name.toLowerCase());
+  const url = $("pageUrl").value.trim().split("#")[0];
+  if (list.length < 3) return showError("Add at least 3 people.");
+  if (new Set(names).size !== names.length) return showError("Two people have the same name. Add an initial so they're different.");
+  const adults = list.filter(p => !p.kid).map(p => p.name);
+  const orphan = list.find(p => p.kid && !adults.includes(p.parent));
+  if (orphan) return showError(`Choose which parent gets ${orphan.name}'s link.`);
+  if (!/^https?:\/\//.test(url)) return showError("Paste this page's share link into “Link to this page” so the links work for everyone.");
+  const perm = draw(list, $("noHousehold").checked);
+  if (!perm) return showError("Those household rules make a draw impossible. Try turning the household option off.");
+
+  const budget = $("budget").value.trim(), when = $("when").value.trim();
+  const linkFor = i => `${url}#${encode({ g: list[i].name, r: list[perm[i]].name, b: budget, w: when, s: Math.random().toString(36).slice(2, 6) })}`;
+
+  $("msgs").innerHTML = "";
+  list.forEach((p, i) => {
+    if (p.kid) return;
+    const kids = list.map((k, j) => [k, j]).filter(([k]) => k.kid && k.parent === p.name);
+    let text = `🎅 Family Secret Santa ${new Date().getFullYear()}!\n\nYour link (only open it yourself):\n${linkFor(i)}`;
+    kids.forEach(([k, j]) => { text += `\n\nFor ${k.name} (let them tap it!):\n${linkFor(j)}`; });
+    if (budget) text += `\n\nBudget: ${budget}`;
+    if (when) text += `\nSwap: ${when}`;
+    const card = document.createElement("div");
+    card.className = "msg";
+    card.innerHTML = `<strong>To ${esc(p.name)}${kids.length ? ` <span style="font-weight:400;color:var(--muted)">+ ${kids.map(([k]) => esc(k.name)).join(", ")}</span>` : ""}</strong>
+      <pre></pre>
+      <div class="actions">
+        <a class="btn primary small" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">Send on WhatsApp</a>
+        <button class="ghost small" type="button">Copy message</button>
+      </div>`;
+    card.querySelector("pre").textContent = text;
+    const copyBtn = card.querySelector("button");
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(text).then(() => { copyBtn.textContent = "Copied"; setTimeout(() => copyBtn.textContent = "Copy message", 1500); })
+        .catch(() => { const r = document.createRange(); r.selectNodeContents(card.querySelector("pre")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copyBtn.textContent = "Press Cmd+C"; });
+    };
+    $("msgs").appendChild(card);
+  });
+  $("results").hidden = false;
+  $("results").scrollIntoView({ behavior: "smooth" });
+};
+
+/* ---------- reveal ---------- */
+function showReveal(data) {
+  $("organiser").hidden = true;
+  $("reveal").hidden = false;
+  $("rTitle").textContent = `Hi ${data.g}!`;
+  const gift = $("gift");
+  gift.onclick = () => {
+    if (gift.classList.contains("open")) return;
+    gift.classList.remove("wiggle");
+    gift.classList.add("open");
+    $("rHint").hidden = true;
+    setTimeout(() => {
+      $("rWho").textContent = data.r;
+      const ex = [];
+      if (data.b) ex.push(`<span class="budget">Budget: ${esc(data.b)}</span>`);
+      if (data.w) ex.push(`<span class="budget">Swap: ${esc(data.w)}</span>`);
+      $("rExtras").innerHTML = ex.join("");
+      $("rResult").hidden = false;
+      confetti();
+    }, 450);
+  };
+}
+
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const c = $("confetti"); c.hidden = false;
+  const ctx = c.getContext("2d"), dpr = devicePixelRatio || 1;
+  c.width = innerWidth * dpr; c.height = innerHeight * dpr; ctx.scale(dpr, dpr);
+  const cs = getComputedStyle(document.documentElement);
+  const colors = ["--accent", "--gold", "--pine"].map(v => cs.getPropertyValue(v).trim());
+  const bits = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2, y: innerHeight * 0.45, vx: (Math.random() - .5) * 14, vy: -Math.random() * 14 - 4,
+    r: Math.random() * 6 + 4, a: Math.random() * 6, va: (Math.random() - .5) * .3, c: colors[Math.floor(Math.random() * 3)] }));
+  let t = 0;
+  (function tick() {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    bits.forEach(b => { b.vy += .35; b.vx *= .99; b.x += b.vx; b.y += b.vy; b.a += b.va;
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a); ctx.fillStyle = b.c; ctx.fillRect(-b.r / 2, -b.r / 4, b.r, b.r / 2); ctx.restore(); });
+    if (++t < 200) requestAnimationFrame(tick); else c.hidden = true;
+  })();
+}
+
+/* ---------- boot ---------- */
+function route() {
+  const data = location.hash.startsWith("#gift-") ? decode(location.hash) : null;
+  if (data && data.g && data.r) return showReveal(data);
+  $("reveal").hidden = true;
+  $("organiser").hidden = false;
+  $("pageUrl").value = $("pageUrl").value || PAGE_URL;
+  $("pageUrl").closest("label").hidden = !!PAGE_URL;
+  render();
+}
+addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
