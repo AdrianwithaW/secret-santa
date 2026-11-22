@@ -147,7 +147,7 @@ canvas#confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; 
     <div class="hero-inner">
       <p class="eyebrow">Christmas <span id="year">2026</span></p>
       <h1>Family Secret <span class="hatted">Santa<svg viewBox="0 0 100 80" aria-hidden="true"><path d="M8 62 C 16 30, 44 6, 80 12 C 72 24, 68 40, 74 62 Z" fill="var(--hat)"/><rect x="2" y="54" width="80" height="18" rx="9" fill="#fff"/><circle cx="84" cy="13" r="10" fill="#fff"/></svg></span></h1>
-      <p class="lede">Add everyone, tick who's a kid and pick which parent gets their link. Hit Draw and you'll get one message per parent to send on WhatsApp. You won't see who got who.</p>
+      <p class="lede">Add everyone, tick who's a kid and pick which parent gets their link. Hit Draw and you'll get one message per parent to send by text, email or whatever chat app you use. You won't see who got who.</p>
     </div>
   </header>
   <div class="wrap below-hero">
@@ -336,6 +336,7 @@ function showResults(d, url) {
   const perm = d.m, budget = d.b, when = d.w;
   const linkFor = i => `${url}#${encode({ g: list[i].name, r: list[perm[i]].name, b: budget, w: when, s: d.s[i] })}`;
 
+  const canShare = typeof navigator.share === "function";
   $("msgs").innerHTML = "";
   list.forEach((p, i) => {
     if (p.kid) return;
@@ -349,11 +350,13 @@ function showResults(d, url) {
     card.innerHTML = `<strong>To ${esc(p.name)}${kids.length ? ` <span style="font-weight:400;color:var(--muted)">+ ${kids.map(([k]) => esc(k.name)).join(", ")}</span>` : ""}</strong>
       <pre></pre>
       <div class="actions">
-        <a class="btn primary small" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">Send on WhatsApp</a>
-        <button class="ghost small" type="button">Copy message</button>
+        ${canShare ? `<button class="primary small share-btn" type="button">Share message</button>` : ""}
+        <button class="${canShare ? "ghost" : "primary"} small copy-btn" type="button">Copy message</button>
       </div>`;
     card.querySelector("pre").textContent = text;
-    const copyBtn = card.querySelector("button");
+    const shareBtn = card.querySelector(".share-btn");
+    if (shareBtn) shareBtn.onclick = () => navigator.share({ text }).catch(() => {});
+    const copyBtn = card.querySelector(".copy-btn");
     copyBtn.onclick = () => copyText(copyBtn, text, card.querySelector("pre"), "Copy message");
     $("msgs").appendChild(card);
   });
