@@ -19,20 +19,29 @@
   --accent-fg: #ffffff;
   --pine: #1f5a3d;
   --gold: #d9a531;
+  --hero-bg: #17442f;
+  --hero-bg2: #0f3323;
+  --hero-fg: #ffffff;
+  --hero-muted: #cfe3d6;
+  --hat: #d42a3f;
+  --wire: #0a2418;
   --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --body: "DM Sans", system-ui, -apple-system, sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0f1c15; --surface: #172a20; --fg: #e9f1ea; --muted: #9db3a4; --line: #2a4335;
-  --accent: #e0465c; --accent-fg: #ffffff; --pine: #5fbf8c; --gold: #e8bb52; color-scheme: dark } }
+  --accent: #e0465c; --accent-fg: #ffffff; --pine: #5fbf8c; --gold: #e8bb52;
+  --hero-bg: #12382a; --hero-bg2: #0a2219; --hero-muted: #b9d3c3; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #0f1c15; --surface: #172a20; --fg: #e9f1ea; --muted: #9db3a4; --line: #2a4335;
-  --accent: #e0465c; --accent-fg: #ffffff; --pine: #5fbf8c; --gold: #e8bb52; color-scheme: dark }
+  --accent: #e0465c; --accent-fg: #ffffff; --pine: #5fbf8c; --gold: #e8bb52;
+  --hero-bg: #12382a; --hero-bg2: #0a2219; --hero-muted: #b9d3c3; color-scheme: dark }
 
 html, body { min-height: 100%; }
 body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--body);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.wrap { max-width: 640px; margin: 0 auto; padding-block: 32px 64px; display: grid; gap: 28px; }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 32px 64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+label.toggle.wrap-ok { white-space: normal; align-items: flex-start; }
 h1, h2 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
 h1 { font-size: clamp(2rem, 7vw, 2.8rem); font-weight: 800; letter-spacing: -0.02em; }
 h2 { font-size: 1.25rem; font-weight: 600; }
@@ -68,6 +77,44 @@ button, .btn { font: 600 1rem var(--body); border: 0; border-radius: 999px; padd
 .msg pre { margin: 0; white-space: pre-wrap; word-break: break-all; font: .85rem/1.45 ui-monospace, Menlo, monospace; color: var(--muted); background: var(--bg); padding: 10px; border-radius: 8px; max-height: 180px; overflow: auto; }
 .note { font-size: .9rem; color: var(--muted); border-left: 3px solid var(--gold); padding-left: 12px; }
 
+/* Festive hero on the organiser page */
+.hero { position: relative; overflow: hidden; color: var(--hero-fg);
+  margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  margin-top: calc(-1 * env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px);
+  background: radial-gradient(120% 90% at 50% 0%, var(--hero-bg) 0%, var(--hero-bg2) 100%); }
+.hero .snow { position: absolute; inset: 0; pointer-events: none; opacity: .85;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.9) 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255,255,255,.7) 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(255,255,255,.5) 2px, transparent 2.5px);
+  background-size: 90px 90px, 60px 60px, 140px 140px;
+  background-position: 0 0, 25px 40px, 70px 10px;
+  animation: snow 14s linear infinite; }
+@keyframes snow { to { background-position: 30px 360px, 5px 300px, 90px 290px; } }
+.lights { display: flex; height: 44px; overflow: hidden; position: relative; z-index: 1; }
+.bulb { flex: 0 0 44px; height: 44px; position: relative;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='24'%3E%3Cpath d='M0 4 Q22 20 44 4' fill='none' stroke='%230a2418' stroke-width='2'/%3E%3C/svg%3E") no-repeat 0 0 / 44px 24px; }
+.bulb::before { content: ""; position: absolute; left: 19px; top: 10px; width: 6px; height: 5px; border-radius: 1px; background: var(--wire); }
+.bulb::after { content: ""; position: absolute; left: 17px; top: 14px; width: 10px; height: 15px; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  background: var(--c); box-shadow: 0 0 10px 2px var(--c); animation: twinkle 2.6s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes twinkle { 0%, 100% { opacity: 1 } 50% { opacity: .35; box-shadow: none } }
+.hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; display: grid; gap: 12px;
+  padding-block: 18px 54px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.hero .eyebrow { color: var(--gold); }
+.hero h1 { color: var(--hero-fg); font-size: clamp(2.4rem, 9vw, 3.6rem); }
+.hero .lede { color: var(--hero-muted); }
+.hatted { position: relative; display: inline-block; }
+.hatted svg { position: absolute; width: .95em; left: -.32em; top: -.62em; transform: rotate(-22deg); pointer-events: none; }
+.hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 22px;
+  background: radial-gradient(circle at 50% 100%, var(--bg) 62%, transparent 64%) 0 0 / 46px 22px repeat-x,
+              radial-gradient(circle at 50% 100%, var(--bg) 62%, transparent 64%) 23px 8px / 46px 22px repeat-x; }
+.wrap.below-hero { padding-top: 12px; }
+h2::before { content: "\2605"; color: var(--gold); margin-right: 8px; font-size: .9em; }
+#drawBtn { font-size: 1.1rem; padding: 14px 28px; box-shadow: 0 6px 0 -1px color-mix(in srgb, var(--accent) 60%, #000);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 12px, rgba(255,255,255,.12) 12px 24px); transition: transform .15s ease, box-shadow .15s ease; }
+#drawBtn:hover { transform: translateY(-2px) rotate(-1deg); }
+#drawBtn:active { transform: translateY(3px); box-shadow: 0 2px 0 -1px color-mix(in srgb, var(--accent) 60%, #000); }
+
 /* Reveal view */
 .reveal { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; text-align: center; padding-block: 24px; box-sizing: border-box; }
 .reveal .inner { display: grid; gap: 22px; justify-items: center; max-width: 440px; }
@@ -88,23 +135,28 @@ button, .btn { font: 600 1rem var(--body); border: 0; border-radius: 999px; padd
 @keyframes pop { from { transform: scale(.3); opacity: 0 } to { transform: scale(1); opacity: 1 } }
 .budget { display: inline-block; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 500; }
 canvas#confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
-@media (prefers-reduced-motion: reduce) { .wiggle, .who { animation: none; } .gift .lid, .gift .bow { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .wiggle, .who, .hero .snow, .bulb::after { animation: none; } #drawBtn { transition: none; } .gift .lid, .gift .bow { transition: none; } }
 </style>
 </head>
 <body>
 
-<div id="organiser" class="wrap" hidden>
-  <header style="display:grid;gap:10px">
-    <p class="eyebrow">Christmas 2026</p>
-    <h1>Family Secret Santa</h1>
-    <p class="lede">Add everyone, tick who's a kid and pick which parent gets their link. Hit Draw and you'll get one message per parent to send on WhatsApp. You won't see who got who.</p>
+<div id="organiser" hidden>
+  <header class="hero">
+    <div class="snow" aria-hidden="true"></div>
+    <div class="lights" id="lights" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <p class="eyebrow">Christmas <span id="year">2026</span></p>
+      <h1>Family Secret <span class="hatted">Santa<svg viewBox="0 0 100 80" aria-hidden="true"><path d="M8 62 C 16 30, 44 6, 80 12 C 72 24, 68 40, 74 62 Z" fill="var(--hat)"/><rect x="2" y="54" width="80" height="18" rx="9" fill="#fff"/><circle cx="84" cy="13" r="10" fill="#fff"/></svg></span></h1>
+      <p class="lede">Add everyone, tick who's a kid and pick which parent gets their link. Hit Draw and you'll get one message per parent to send on WhatsApp. You won't see who got who.</p>
+    </div>
   </header>
+  <div class="wrap below-hero">
 
   <section>
     <h2>Who's taking part</h2>
     <div id="people" class="people"></div>
     <div class="actions"><button class="ghost small" id="addBtn" type="button">+ Add person</button></div>
-    <label class="toggle"><input type="checkbox" id="noHousehold"> Don't let people draw someone from their own household</label>
+    <label class="toggle wrap-ok"><input type="checkbox" id="noHousehold"> Don't let people draw someone from their own household</label>
     <p class="note" id="householdNote" hidden>Type the same household name (e.g. "Smiths") for people who live together.</p>
   </section>
 
@@ -138,6 +190,7 @@ canvas#confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; 
       <ul id="pairs" hidden style="margin:0;padding-left:20px"></ul>
     </div>
   </section>
+  </div>
 </div>
 
 <div id="reveal" class="reveal" hidden>
@@ -370,6 +423,13 @@ $("closeBtn").onclick = () => {
   try { history.replaceState(null, "", location.pathname); } catch {}
   try { window.close(); } catch {}
 };
+
+(function stringLights() {
+  const colors = ["#f6c945", "#ff5a6e", "#7fe0a6", "#8fd3ff", "#fff4d6"];
+  $("lights").innerHTML = Array.from({ length: 48 }, (_, i) =>
+    `<span class="bulb" style="--c:${colors[i % colors.length]};--d:${((i * 0.37) % 2.6).toFixed(2)}s"></span>`).join("");
+  $("year").textContent = new Date().getFullYear();
+})();
 
 /* ---------- boot ---------- */
 function route() {
