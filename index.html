@@ -127,6 +127,16 @@ canvas#confetti { position: fixed; inset: 0; pointer-events: none; width: 100%; 
     <p class="lede">One message per parent. It has their own link plus a link for each of their kids. Ask everyone to only open their own link.</p>
     <div id="msgs" class="people"></div>
     <p class="note">Drawing again makes brand new links, so only send one set.</p>
+    <div class="msg">
+      <strong>Your link to reload this draw</strong>
+      <p class="lede" style="font-size:.9rem">Save this somewhere private. Opening it brings back these exact messages and links, so you can check or resend them later. Don't share it: it holds the whole draw.</p>
+      <pre id="checkLink"></pre>
+      <div class="actions">
+        <button class="ghost small" id="copyCheck" type="button">Copy link</button>
+        <button class="ghost small" id="showPairs" type="button">Show who's buying for who</button>
+      </div>
+      <ul id="pairs" hidden style="margin:0;padding-left:20px"></ul>
+    </div>
   </section>
 </div>
 
@@ -153,14 +163,14 @@ const PAGE_URL = /^https?:/.test(location.protocol) ? location.origin + location
 const KEY = "ho-ho-ho-merry";
 
 /* ---------- encoding (hash must be letters, digits, hyphens) ---------- */
-function encode(obj) {
+function encode(obj, prefix = "gift-") {
   const bytes = new TextEncoder().encode(JSON.stringify(obj));
   let hex = "";
   bytes.forEach((b, i) => { hex += (b ^ KEY.charCodeAt(i % KEY.length)).toString(16).padStart(2, "0"); });
-  return "gift-" + hex;
+  return prefix + hex;
 }
 function decode(hash) {
-  const hex = hash.replace(/^#?gift-/, "");
+  const hex = hash.replace(/^#?(gift|draw)-/, "");
   if (!/^[0-9a-f]+$/.test(hex) || hex.length % 2) return null;
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16) ^ KEY.charCodeAt(i % KEY.length);
@@ -249,14 +259,30 @@ $("drawBtn").onclick = () => {
   const perm = draw(list, $("noHousehold").checked);
   if (!perm) return showError("Those household rules make a draw impossible. Try turning the household option off.");
 
-  const budget = $("budget").value.trim(), when = $("when").value.trim();
-  const linkFor = i => `${url}#${encode({ g: list[i].name, r: list[perm[i]].name, b: budget, w: when, s: Math.random().toString(36).slice(2, 6) })}`;
+  const salts = list.map(() => Math.random().toString(36).slice(2, 6));
+  const d = {
+    p: list.map(x => ({ n: x.name, k: x.kid ? 1 : 0, pa: x.kid ? x.parent : "" })),
+    m: perm, b: $("budget").value.trim(), w: $("when").value.trim(), s: salts, y: new Date().getFullYear(),
+  };
+  showResults(d, url);
+  $("results").scrollIntoView({ behavior: "smooth" });
+};
+
+function copyText(btn, text, pre, label) {
+  navigator.clipboard.writeText(text).then(() => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = label, 1500); })
+    .catch(() => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Press Cmd+C"; });
+}
+
+function showResults(d, url) {
+  const list = d.p.map(x => ({ name: x.n, kid: !!x.k, parent: x.pa }));
+  const perm = d.m, budget = d.b, when = d.w;
+  const linkFor = i => `${url}#${encode({ g: list[i].name, r: list[perm[i]].name, b: budget, w: when, s: d.s[i] })}`;
 
   $("msgs").innerHTML = "";
   list.forEach((p, i) => {
     if (p.kid) return;
     const kids = list.map((k, j) => [k, j]).filter(([k]) => k.kid && k.parent === p.name);
-    let text = `🎅 Family Secret Santa ${new Date().getFullYear()}!\n\nYour link (only open it yourself):\n${linkFor(i)}`;
+    let text = `🎅 Family Secret Santa ${d.y}!\n\nYour link (only open it yourself):\n${linkFor(i)}`;
     kids.forEach(([k, j]) => { text += `\n\nFor ${k.name}:\n${linkFor(j)}\nIt's safe for you to open this one. The next screen shows a wrapped present without giving anything away. Hand it to ${k.name} and let them tap the present to see who they're buying for.`; });
     if (budget) text += `\n\nBudget: ${budget}`;
     if (when) text += `\nSwap: ${when}`;
@@ -270,15 +296,23 @@ $("drawBtn").onclick = () => {
       </div>`;
     card.querySelector("pre").textContent = text;
     const copyBtn = card.querySelector("button");
-    copyBtn.onclick = () => {
-      navigator.clipboard.writeText(text).then(() => { copyBtn.textContent = "Copied"; setTimeout(() => copyBtn.textContent = "Copy message", 1500); })
-        .catch(() => { const r = document.createRange(); r.selectNodeContents(card.querySelector("pre")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copyBtn.textContent = "Press Cmd+C"; });
-    };
+    copyBtn.onclick = () => copyText(copyBtn, text, card.querySelector("pre"), "Copy message");
     $("msgs").appendChild(card);
   });
+
+  const check = `${url}#${encode(d, "draw-")}`;
+  $("checkLink").textContent = check;
+  $("copyCheck").onclick = () => copyText($("copyCheck"), check, $("checkLink"), "Copy link");
+  $("pairs").innerHTML = list.map((p, i) => `<li>${esc(p.name)} → <strong>${esc(list[perm[i]].name)}</strong></li>`).join("");
+  $("pairs").hidden = true;
+  $("showPairs").textContent = "Show who's buying for who";
+  $("showPairs").onclick = () => {
+    const show = $("pairs").hidden;
+    $("pairs").hidden = !show;
+    $("showPairs").textContent = show ? "Hide the draw" : "Show who's buying for who";
+  };
   $("results").hidden = false;
-  $("results").scrollIntoView({ behavior: "smooth" });
-};
+}
 
 /* ---------- reveal ---------- */
 function showReveal(data) {
@@ -330,6 +364,15 @@ function route() {
   $("organiser").hidden = false;
   $("pageUrl").value = $("pageUrl").value || PAGE_URL;
   $("pageUrl").closest("label").hidden = !!PAGE_URL;
+  const saved = location.hash.startsWith("#draw-") ? decode(location.hash) : null;
+  if (saved && Array.isArray(saved.p) && Array.isArray(saved.m)) {
+    people = saved.p.map(x => ({ name: x.n, kid: !!x.k, parent: x.pa || "", house: "" }));
+    $("budget").value = saved.b || "";
+    $("when").value = saved.w || "";
+    render();
+    showResults(saved, location.origin + location.pathname);
+    return;
+  }
   render();
 }
 addEventListener("hashchange", route);
