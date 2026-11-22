@@ -257,7 +257,7 @@ $("drawBtn").onclick = () => {
     if (p.kid) return;
     const kids = list.map((k, j) => [k, j]).filter(([k]) => k.kid && k.parent === p.name);
     let text = `🎅 Family Secret Santa ${new Date().getFullYear()}!\n\nYour link (only open it yourself):\n${linkFor(i)}`;
-    kids.forEach(([k, j]) => { text += `\n\nFor ${k.name} (let them tap it!):\n${linkFor(j)}`; });
+    kids.forEach(([k, j]) => { text += `\n\nFor ${k.name}:\n${linkFor(j)}\nIt's safe for you to open this one. The next screen shows a wrapped present without giving anything away. Hand it to ${k.name} and let them tap the present to see who they're buying for.`; });
     if (budget) text += `\n\nBudget: ${budget}`;
     if (when) text += `\nSwap: ${when}`;
     const card = document.createElement("div");
